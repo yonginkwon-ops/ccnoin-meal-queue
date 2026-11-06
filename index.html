@@ -96,7 +96,7 @@ input[type=number],input[type=text],input[type=password]{border:1px solid var(--
     <span class="clock" id="clock">--:--</span>
   </div>
   <div class="b-main">
-    <div class="b-label">지금 입장하실 번호</div>
+    <div class="b-label">지금 호출 번호</div>
     <div class="b-num" id="bNum">—<small>번</small></div>
     <div class="b-sub" id="bSub">순번 정보를 불러오는 중입니다</div>
     <div class="b-next" id="bNextWrap" hidden>다음 순서 <b id="bNext"></b></div>
@@ -129,7 +129,7 @@ input[type=number],input[type=text],input[type=password]{border:1px solid var(--
       <button type="button" class="pad" id="pad" aria-label="현재 번호. 왼쪽 클릭하면 1 올리고, 오른쪽 클릭하면 1 내립니다">
         <span class="pad-num" id="aNum">—</span>
         <span class="pad-unit">번 호출 중</span>
-        <span class="pad-call" id="aCall">번호표를 가지신 분은 지금 식당으로 들어와 주세요</span>
+        <span class="pad-call" id="aCall"></span>
         <span class="pad-hint"><b>왼쪽 클릭 +1</b> · <b>오른쪽 클릭 −1</b><br>휴대폰: 짧게 누르면 +1 · 길게 누르면 −1 · 키보드 ↑↓</span>
       </button>
       <div class="now"><span class="meta" id="aWait"></span></div>
@@ -240,7 +240,7 @@ input[type=number],input[type=text],input[type=password]{border:1px solid var(--
     numEl.innerHTML = (loaded ? cur : "—") + "<small>번</small>";
     $("bSub").textContent = !loaded ? "순번 정보를 불러오는 중입니다"
       : cur <= 0 ? "곧 입장을 시작합니다. 번호표를 준비해 주세요"
-      : cur + "번 번호표를 가지신 분은 지금 식당으로 들어와 주세요";
+      : cur + "번 번호표를 가지신 분은 식당 입구에서 대기해 주세요";
     if (loaded && cur < total){ $("bNext").textContent = (cur+1) + "~" + Math.min(total, cur+NEXT_WAIT) + "번 · 3층에서 기다려 주세요"; $("bNextWrap").hidden = false; }
     else $("bNextWrap").hidden = true;
     $("bMsg").textContent = s.message || "";
@@ -250,7 +250,7 @@ input[type=number],input[type=text],input[type=password]{border:1px solid var(--
     $("aNum").textContent = loaded ? (pending !== null ? pending : cur) : "—";
     const shown = pending !== null ? pending : cur;
     $("aCall").textContent = !loaded ? "" : shown <= 0 ? "아직 호출 전입니다 (안내 화면: 곧 입장을 시작합니다)"
-      : "안내 화면: " + shown + "번 번호표를 가지신 분은 지금 식당으로 들어와 주세요";
+      : "안내 화면: " + shown + "번 번호표를 가지신 분은 식당 입구에서 대기해 주세요";
     $("pad").classList.toggle("pending", pending !== null);
     $("pad").disabled = !loaded;
     $("aWait").textContent = loaded ? "· 남은 대기 " + Math.max(0,total-cur) + "명 / 전체 " + total + "명" : "";
