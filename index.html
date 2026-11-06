@@ -215,6 +215,7 @@ input[type=number],input[type=text],input[type=password]{border:1px solid var(--
   const SUPABASE_KEY = "sb_publishable_YoIzohU1s7wZSh6sXKxq2w_qZ8nd4oZ";
 
   const $ = id => document.getElementById(id);
+  const NEXT_WAIT = 20; /* 다음 순서로 미리 3층에서 기다릴 인원 */
   const DEF = {current:0,total:1000,step:50,message:"",history:[],updated_at:null};
   let state = Object.assign({}, DEF), loaded = false, lastShown = null, busy = false, pin = "", pending = null;
   const ss = { get(k){ try{return sessionStorage.getItem(k)||"";}catch(e){return "";} },
@@ -240,7 +241,7 @@ input[type=number],input[type=text],input[type=password]{border:1px solid var(--
     $("bSub").textContent = !loaded ? "순번 정보를 불러오는 중입니다"
       : cur <= 0 ? "곧 입장을 시작합니다. 번호표를 준비해 주세요"
       : cur + "번 번호표를 가지신 분은 지금 식당으로 들어와 주세요";
-    if (loaded && cur < total){ $("bNext").textContent = (cur+1) + "번 · 입구 앞에서 기다려 주세요"; $("bNextWrap").hidden = false; }
+    if (loaded && cur < total){ $("bNext").textContent = (cur+1) + "~" + Math.min(total, cur+NEXT_WAIT) + "번 · 3층에서 기다려 주세요"; $("bNextWrap").hidden = false; }
     else $("bNextWrap").hidden = true;
     $("bMsg").textContent = s.message || "";
     if (loaded && lastShown !== null && lastShown !== cur){ numEl.classList.remove("flash"); void numEl.offsetWidth; numEl.classList.add("flash"); }
