@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>행사 식사 입장 순번</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gothic+A1:wght@500;700;900&family=Noto+Sans+KR:wght@400;500;700&display=swap">
+<style>
+/* 화면용(기본): 한 화면 꽉 찬 큰 번호판 / 관리용(#admin): 비밀번호 → 조작판 */
+:root{
+  --bg:#f3f5f2; --panel:#ffffff; --fg:#14201a; --muted:#56655c; --line:#d5ddd7;
+  --accent:#1f6b4a; --accent-ink:#ffffff; --call:#0f4f35; --warn:#a4561b;
+  --display:"Gothic A1","Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --body:"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root{
+  --bg:#0d1511; --panel:#16211b; --fg:#eef4ef; --muted:#9fb2a6; --line:#2a3a31;
+  --accent:#3fae7c; --accent-ink:#06120c; --call:#8ff0bd; --warn:#f0a35e; color-scheme:dark}}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;word-break:keep-all;overflow-wrap:anywhere;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+[hidden]{display:none!important}
+button,input{font:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+#board{min-height:100%;display:flex;flex-direction:column;padding-block:3vh}
+.b-top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
+  font-family:var(--display);font-weight:700;font-size:clamp(18px,2.6vw,40px)}
+.b-top .org{color:var(--muted)}
+.b-top .clock{font-variant-numeric:tabular-nums}
+.b-main{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:1vh}
+.b-label{font-family:var(--display);font-weight:700;font-size:clamp(24px,4.4vw,72px);color:var(--muted)}
+.b-num{font-family:var(--display);font-weight:900;line-height:1;color:var(--call);border-radius:24px;padding:0 .1em;
+  font-size:clamp(96px,26vw,420px);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.b-num small{font-size:.32em;font-weight:900;margin-left:.08em;letter-spacing:0}
+.b-sub{font-family:var(--display);font-weight:900;font-size:clamp(28px,5.4vw,92px);text-wrap:balance}
+.b-next{margin-top:2vh;display:inline-flex;gap:.6em;align-items:baseline;flex-wrap:wrap;justify-content:center;
+  border:3px solid var(--line);border-radius:14px;padding:.4em .9em;
+  font-family:var(--display);font-weight:700;font-size:clamp(20px,3.4vw,56px)}
+.b-next b{color:var(--warn);font-variant-numeric:tabular-nums}
+.b-msg{min-height:1.4em;font-family:var(--display);font-weight:700;font-size:clamp(20px,3vw,50px);text-wrap:balance}
+.b-foot{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;color:var(--muted);font-size:clamp(13px,1.3vw,20px)}
+.b-foot button{background:transparent;color:var(--muted);border:1px solid var(--line);border-radius:8px;padding:6px 12px}
+.flash{animation:flash 1.2s ease-out}
+@keyframes flash{0%{background:var(--accent);color:var(--accent-ink)}100%{background:transparent}}
+@media (prefers-reduced-motion:reduce){.flash{animation:none}}
+.status{font-size:14px;margin:0}
+.status.bad{color:var(--warn);font-weight:700}
+
+#admin{max-width:960px;margin:0 auto;padding-block:24px 48px;display:grid;gap:20px}
+#admin h1{font-family:var(--display);font-weight:900;font-size:26px;margin:0;text-wrap:balance}
+.hint{color:var(--muted);margin:4px 0 0;line-height:1.6}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px;display:grid;gap:16px}
+.card h2{margin:0;font-size:17px;font-family:var(--display);font-weight:700}
+.now{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.now .big{font-family:var(--display);font-weight:900;font-size:64px;line-height:1;color:var(--call);font-variant-numeric:tabular-nums}
+.now .meta{color:var(--muted)}
+.pad{width:100%;border:3px solid var(--accent);border-radius:16px;background:var(--bg);color:var(--fg);
+  padding:20px 16px 18px;display:grid;justify-items:center;gap:6px;
+  user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:manipulation}
+.pad:hover{background:var(--panel)}
+.pad:active{transform:scale(.995)}
+.pad-num{font-family:var(--display);font-weight:900;font-size:clamp(120px,28vw,300px);line-height:1;color:var(--call);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.pad-unit{font-family:var(--display);font-weight:700;font-size:clamp(20px,3vw,32px)}
+.pad-call{font-family:var(--display);font-weight:700;font-size:clamp(16px,2.2vw,22px);text-align:center;text-wrap:balance}
+.pad-hint{color:var(--muted);font-size:15px;line-height:1.6;text-align:center}
+.pad-hint b{color:var(--fg)}
+.pad.pending .pad-num{opacity:.7}
+.pad:disabled{opacity:.5;cursor:not-allowed}
+.btns{display:flex;flex-wrap:wrap;gap:10px}
+.btn{border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:10px;padding:14px 18px;font-weight:700;min-width:84px;text-decoration:none;display:inline-block}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-size:18px;padding:16px 24px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+label{display:grid;gap:6px;font-weight:500;font-size:15px}
+input[type=number],input[type=text],input[type=password]{border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:8px;padding:10px 12px;width:100%}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:999px;padding:8px 14px;font-size:14px}
+.links{display:grid;gap:8px;line-height:1.6}
+.links code{background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:2px 6px;word-break:break-all}
+.log{margin:0;padding-left:18px;color:var(--muted);font-size:14px;line-height:1.7;font-variant-numeric:tabular-nums}
+.confirm{display:flex;gap:10px;align-items:center;flex-wrap:wrap;color:var(--warn);font-weight:700}
+#login{max-width:420px}
+</style>
+</head>
+<body>
+
+<section id="board" aria-live="polite">
+  <div class="b-top">
+    <span class="org">춘천남부노인복지관 · 식사 안내</span>
+    <span class="clock" id="clock">--:--</span>
+  </div>
+  <div class="b-main">
+    <div class="b-label">지금 입장하실 번호</div>
+    <div class="b-num" id="bNum">—<small>번</small></div>
+    <div class="b-sub" id="bSub">순번 정보를 불러오는 중입니다</div>
+    <div class="b-next" id="bNextWrap" hidden>다음 순서 <b id="bNext"></b></div>
+    <div class="b-msg" id="bMsg"></div>
+  </div>
+  <div class="b-foot">
+    <span class="status" id="bStatus">연결 중…</span>
+    <span><button type="button" id="fsBtn">전체 화면</button></span>
+  </div>
+</section>
+
+<main id="admin" hidden>
+  <div>
+    <h1>식사 입장 순번 관리</h1>
+    <p class="hint">여기서 번호를 바꾸면 안내 화면을 띄운 모든 모니터가 바로 같이 바뀝니다. 식당 좌석 약 400석 기준으로 자리가 나는 만큼 번호를 올려 주세요.</p>
+  </div>
+
+  <form class="card" id="login">
+    <h2>관리 비밀번호</h2>
+    <label for="pin">담당자에게 받은 비밀번호를 넣어 주세요
+      <input type="password" id="pin" autocomplete="current-password" required>
+    </label>
+    <div class="btns"><button type="submit" class="btn primary" id="loginBtn">들어가기</button></div>
+    <p class="status" id="loginStatus"></p>
+  </form>
+
+  <div id="panel" hidden style="display:grid;gap:20px">
+    <div class="card">
+      <h2>현재 호출</h2>
+      <button type="button" class="pad" id="pad" aria-label="현재 번호. 왼쪽 클릭하면 1 올리고, 오른쪽 클릭하면 1 내립니다">
+        <span class="pad-num" id="aNum">—</span>
+        <span class="pad-unit">번 호출 중</span>
+        <span class="pad-call" id="aCall">번호표를 가지신 분은 지금 식당으로 들어와 주세요</span>
+        <span class="pad-hint"><b>왼쪽 클릭 +1</b> · <b>오른쪽 클릭 −1</b><br>휴대폰: 짧게 누르면 +1 · 길게 누르면 −1 · 키보드 ↑↓</span>
+      </button>
+      <div class="now"><span class="meta" id="aWait"></span></div>
+      <div class="btns">
+        <button type="button" class="btn primary" data-step="50" id="stepMain">+50명 입장</button>
+        <button type="button" class="btn" data-step="10">+10</button>
+        <button type="button" class="btn" data-step="20">+20</button>
+        <button type="button" class="btn" data-step="100">+100</button>
+        <button type="button" class="btn" data-step="-10">−10 (되돌리기)</button>
+      </div>
+      <div class="row">
+        <label for="setNum">번호 직접 입력
+          <input type="number" id="setNum" min="0" inputmode="numeric" placeholder="예: 400">
+        </label>
+        <div style="display:flex;align-items:flex-end"><button type="button" class="btn" id="setBtn">이 번호로 바꾸기</button></div>
+      </div>
+      <p class="status" id="aStatus">연결 중…</p>
+    </div>
+
+    <div class="card">
+      <h2>안내 문구</h2>
+      <label for="msg">화면 아래에 크게 나오는 한 줄
+        <input type="text" id="msg" maxlength="60" placeholder="예: 번호표를 손에 들고 입구에서 기다려 주세요">
+      </label>
+      <div class="chips" id="chips">
+        <button type="button" class="chip">번호표를 손에 들고 입구에서 기다려 주세요</button>
+        <button type="button" class="chip">식사 후 퇴장은 뒷문으로 부탁드립니다</button>
+        <button type="button" class="chip">잠시 자리 정리 중입니다. 조금만 기다려 주세요</button>
+        <button type="button" class="chip">오늘 식사가 모두 마감되었습니다. 감사합니다</button>
+      </div>
+      <div class="btns">
+        <button type="button" class="btn" id="msgBtn">문구 내보내기</button>
+        <button type="button" class="btn" id="msgClear">문구 지우기</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>행사 설정</h2>
+      <div class="row">
+        <label for="total">전체 인원(번호표 마지막 번호)
+          <input type="number" id="total" min="1" inputmode="numeric" value="1000">
+        </label>
+        <label for="step">‘입장’ 버튼 한 번에 올릴 인원
+          <input type="number" id="step" min="1" inputmode="numeric" value="50">
+        </label>
+      </div>
+      <div class="btns">
+        <button type="button" class="btn" id="cfgBtn">설정 저장</button>
+        <button type="button" class="btn" id="resetBtn">처음(0번)으로 초기화</button>
+      </div>
+      <div class="confirm" id="resetConfirm" hidden>
+        정말 0번으로 되돌릴까요?
+        <button type="button" class="btn" id="resetYes">네, 초기화</button>
+        <button type="button" class="btn" id="resetNo">취소</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>모니터에 띄우는 방법</h2>
+      <div class="links">
+        <div>1. 각 모니터 브라우저에서 이 주소를 엽니다. 로그인은 필요 없습니다.<br><code id="boardUrl"></code></div>
+        <div>2. 화면 오른쪽 아래 <b>전체 화면</b>을 누릅니다.</div>
+        <div>3. 관리 화면 주소(끝에 <code>#admin</code>)와 비밀번호는 담당 직원에게만 알려 주세요.</div>
+      </div>
+      <div class="btns">
+        <a class="btn" href="#board">안내 화면 미리보기</a>
+        <button type="button" class="btn" id="logoutBtn">관리 화면 나가기</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>최근 변경</h2>
+      <ol class="log" id="log"><li>아직 변경 기록이 없습니다.</li></ol>
+    </div>
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>
+(function(){
+  /* 공개용 주소·키 (읽기 전용 키라 화면에 들어가도 괜찮습니다. 수정은 비밀번호 함수로만 됩니다) */
+  const SUPABASE_URL = "https://emlhxudunuceelbcxzlt.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_YoIzohU1s7wZSh6sXKxq2w_qZ8nd4oZ";
+
+  const $ = id => document.getElementById(id);
+  const DEF = {current:0,total:1000,step:50,message:"",history:[],updated_at:null};
+  let state = Object.assign({}, DEF), loaded = false, lastShown = null, busy = false, pin = "", pending = null;
+  const ss = { get(k){ try{return sessionStorage.getItem(k)||"";}catch(e){return "";} },
+               set(k,v){ try{ v ? sessionStorage.setItem(k,v) : sessionStorage.removeItem(k);}catch(e){} } };
+
+  /* 화면 전환 */
+  function route(){ const admin = location.hash === "#admin"; $("admin").hidden = !admin; $("board").hidden = admin; }
+  window.addEventListener("hashchange", route); route();
+  $("boardUrl").textContent = location.origin + location.pathname;
+
+  function tick(){ $("clock").textContent = new Date().toLocaleTimeString("ko-KR",{hour:"2-digit",minute:"2-digit"}); }
+  tick(); setInterval(tick, 10000);
+  const fmtTime = t => t ? new Date(t).toLocaleTimeString("ko-KR",{hour:"2-digit",minute:"2-digit",second:"2-digit"}) : "";
+
+  function setStatus(text, bad){
+    [$("bStatus"),$("aStatus")].forEach(el => { el.textContent = text; el.classList.toggle("bad", !!bad); });
+  }
+
+  function render(){
+    const s = state, cur = +s.current||0, total = +s.total||1000, step = +s.step||50;
+    const numEl = $("bNum");
+    numEl.innerHTML = (loaded ? cur : "—") + "<small>번</small>";
+    $("bSub").textContent = !loaded ? "순번 정보를 불러오는 중입니다"
+      : cur <= 0 ? "곧 입장을 시작합니다. 번호표를 준비해 주세요"
+      : cur + "번 번호표를 가지신 분은 지금 식당으로 들어와 주세요";
+    if (loaded && cur < total){ $("bNext").textContent = (cur+1) + "번 · 입구 앞에서 기다려 주세요"; $("bNextWrap").hidden = false; }
+    else $("bNextWrap").hidden = true;
+    $("bMsg").textContent = s.message || "";
+    if (loaded && lastShown !== null && lastShown !== cur){ numEl.classList.remove("flash"); void numEl.offsetWidth; numEl.classList.add("flash"); }
+    if (loaded) lastShown = cur;
+
+    $("aNum").textContent = loaded ? (pending !== null ? pending : cur) : "—";
+    const shown = pending !== null ? pending : cur;
+    $("aCall").textContent = !loaded ? "" : shown <= 0 ? "아직 호출 전입니다 (안내 화면: 곧 입장을 시작합니다)"
+      : "안내 화면: " + shown + "번 번호표를 가지신 분은 지금 식당으로 들어와 주세요";
+    $("pad").classList.toggle("pending", pending !== null);
+    $("pad").disabled = !loaded;
+    $("aWait").textContent = loaded ? "· 남은 대기 " + Math.max(0,total-cur) + "명 / 전체 " + total + "명" : "";
+    $("stepMain").dataset.step = step; $("stepMain").textContent = "+" + step + "명 입장";
+    if (document.activeElement !== $("total")) $("total").value = total;
+    if (document.activeElement !== $("step")) $("step").value = step;
+    const h = Array.isArray(s.history) ? s.history : [], log = $("log"); log.textContent = "";
+    if (!h.length){ const li=document.createElement("li"); li.textContent="아직 변경 기록이 없습니다."; log.appendChild(li); }
+    h.slice().reverse().forEach(e => { const li=document.createElement("li"); li.textContent = fmtTime(e.t) + " · " + e.text; log.appendChild(li); });
+    document.querySelectorAll("#panel button[data-step], #setBtn, #msgBtn, #msgClear, #cfgBtn, #resetBtn").forEach(b => b.disabled = busy || !loaded);
+  }
+
+  function apply(row){
+    if (!row) return;
+    if (loaded && state.updated_at && row.updated_at && new Date(row.updated_at) < new Date(state.updated_at)) return;
+    state = Object.assign({}, DEF, row); loaded = true;
+    setStatus("실시간 연결됨 · 마지막 변경 " + fmtTime(state.updated_at));
+    render();
+  }
+
+  if (!window.supabase || SUPABASE_URL.indexOf("__") === 0){
+    setStatus("순번 서버 설정이 비어 있습니다. 담당자에게 알려 주세요.", true); render(); return;
+  }
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {auth:{persistSession:false}});
+
+  async function load(){
+    const { data, error } = await sb.from("meal_queue").select("*").eq("id",1).maybeSingle();
+    if (error){ setStatus("순번을 불러오지 못했습니다. 인터넷 연결을 확인해 주세요.", true); return; }
+    if (!data){ setStatus("아직 순번 표가 만들어지지 않았습니다.", true); return; }
+    apply(data);
+  }
+
+  /* 실시간 + 안전장치(15초마다 다시 읽기) */
+  sb.channel("meal_queue").on("postgres_changes", {event:"*", schema:"public", table:"meal_queue"}, p => apply(p.new))
+    .subscribe(st => { if (st === "SUBSCRIBED") load(); });
+  load(); setInterval(load, 15000);
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible"){ load(); requestWake(); } });
+  window.addEventListener("online", load);
+
+  /* 관리: 비밀번호 */
+  async function showPanel(ok){ $("login").hidden = ok; $("panel").hidden = !ok; }
+  $("login").addEventListener("submit", async e => {
+    e.preventDefault();
+    const p = $("pin").value; if (!p) return;
+    $("loginBtn").disabled = true; $("loginStatus").textContent = "확인 중…"; $("loginStatus").classList.remove("bad");
+    const { data, error } = await sb.rpc("meal_queue_check", {p_pin:p});
+    $("loginBtn").disabled = false;
+    if (error){ $("loginStatus").textContent = "확인하지 못했습니다. 인터넷 연결을 확인해 주세요."; $("loginStatus").classList.add("bad"); return; }
+    if (!data){ $("loginStatus").textContent = "비밀번호가 맞지 않습니다."; $("loginStatus").classList.add("bad"); return; }
+    pin = p; ss.set("mq_pin", p); $("pin").value = ""; $("loginStatus").textContent = ""; showPanel(true);
+  });
+  $("logoutBtn").addEventListener("click", () => { pin = ""; ss.set("mq_pin",""); showPanel(false); });
+  pin = ss.get("mq_pin"); showPanel(!!pin);
+
+  async function save(args, note){
+    if (busy || !pin) return;
+    busy = true; render();
+    const { data, error } = await sb.rpc("meal_queue_set", Object.assign({p_pin:pin, p_note:note}, args));
+    busy = false;
+    if (error){
+      if (/wrong_pin/.test(error.message||"")){ pin=""; ss.set("mq_pin",""); showPanel(false);
+        $("loginStatus").textContent = "비밀번호가 바뀌었습니다. 다시 넣어 주세요."; $("loginStatus").classList.add("bad"); }
+      else setStatus("저장하지 못했습니다. 인터넷 연결을 확인하고 다시 눌러 주세요.", true);
+      render(); return;
+    }
+    apply(Array.isArray(data) ? data[0] : data);
+  }
+  function setCurrent(n, why){
+    const total = +state.total||1000; n = Math.max(0, Math.min(total, Math.round(n)));
+    if (n === +state.current) return;
+    save({p_current:n}, why + " → " + n + "번");
+  }
+  document.querySelectorAll("#panel button[data-step]").forEach(b => b.addEventListener("click", () => {
+    const st = +b.dataset.step; setCurrent((+state.current||0) + st, st > 0 ? "+" + st : "−" + Math.abs(st));
+  }));
+  /* 큰 번호판: 왼쪽 클릭 +1, 오른쪽 클릭 −1.
+     빠르게 여러 번 눌러도 화면엔 바로 반영하고, 멈춘 뒤 한 번에 저장합니다. */
+  let pendTimer = null;
+  function nudge(d){
+    if (!loaded || !pin) return;
+    const total = +state.total||1000, base = pending !== null ? pending : (+state.current||0);
+    const n = Math.max(0, Math.min(total, base + d));
+    if (n === base) return;
+    pending = n; render();
+    clearTimeout(pendTimer); pendTimer = setTimeout(flush, 350);
+  }
+  async function flush(){
+    if (pending === null) return;
+    if (busy){ pendTimer = setTimeout(flush, 200); return; }
+    const n = pending, from = +state.current||0;
+    if (n === from){ pending = null; render(); return; }
+    await save({p_current:n}, "클릭 " + (n > from ? "+" : "−") + Math.abs(n - from) + " → " + n + "번");
+    if (pending === n) pending = null;
+    render();
+  }
+  const pad = $("pad");
+  pad.addEventListener("click", () => nudge(1));
+  pad.addEventListener("contextmenu", e => { e.preventDefault(); nudge(-1); });
+  pad.addEventListener("keydown", e => {
+    if (e.key === "ArrowUp" || e.key === "ArrowRight"){ e.preventDefault(); nudge(1); }
+    else if (e.key === "ArrowDown" || e.key === "ArrowLeft"){ e.preventDefault(); nudge(-1); }
+  });
+
+  $("setBtn").addEventListener("click", () => { const v = $("setNum").value; if (v !== ""){ setCurrent(+v, "직접 입력"); $("setNum").value = ""; } });
+  $("chips").addEventListener("click", e => { if (e.target.classList.contains("chip")) $("msg").value = e.target.textContent; });
+  $("msgBtn").addEventListener("click", () => { const m = $("msg").value.trim(); save({p_message:m}, "문구: " + (m || "(없음)")); });
+  $("msgClear").addEventListener("click", () => { $("msg").value = ""; save({p_message:""}, "문구 지움"); });
+  $("cfgBtn").addEventListener("click", () => {
+    const t = Math.max(1, Math.round(+$("total").value||1000)), s = Math.max(1, Math.round(+$("step").value||50));
+    save({p_total:t, p_step:s}, "설정: 전체 " + t + "명, 버튼 " + s + "명");
+  });
+  $("resetBtn").addEventListener("click", () => { $("resetConfirm").hidden = false; });
+  $("resetNo").addEventListener("click", () => { $("resetConfirm").hidden = true; });
+  $("resetYes").addEventListener("click", () => { $("resetConfirm").hidden = true; save({p_current:0, p_message:""}, "초기화 → 0번"); });
+
+  /* 전체 화면 + 화면 꺼짐 방지 */
+  $("fsBtn").addEventListener("click", async () => {
+    try { if (!document.fullscreenElement) await document.documentElement.requestFullscreen(); else await document.exitFullscreen(); } catch(e){}
+    requestWake();
+  });
+  let wake = null;
+  async function requestWake(){ try { if (navigator.wakeLock && !wake){ wake = await navigator.wakeLock.request("screen"); wake.addEventListener("release", () => wake = null); } } catch(e){} }
+  requestWake();
+  render();
+})();
+</script>
+</body>
+</html>
