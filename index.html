@@ -28,33 +28,48 @@ button,input{font:inherit}
 button{cursor:pointer}
 :focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 
-#board{position:relative;height:100vh;height:100dvh;overflow:hidden}
+/* ── 안내 화면: 행사장 모니터용 고정 색(밝은 방에서도 멀리서 읽히는 짙은 초록 바탕 + 크림 글자) ── */
+#board{
+  --sg-bg:#0d4231; --sg-bg-hi:#1b6e4f; --sg-bg-lo:#072a1f;
+  --sg-ink:#fffaf0; --sg-soft:#cde9d9; --sg-gold:#ffd27a;
+  --sg-card:#fff6e3; --sg-card-ink:#1f2b24; --sg-range:#b4500f; --sg-tag:#0d4231;
+  position:fixed;inset:0;overflow:hidden;color:var(--sg-ink);
+  background:radial-gradient(ellipse 80% 70% at 50% 45%,var(--sg-bg-hi) 0%,var(--sg-bg) 55%,var(--sg-bg-lo) 100%);
+}
+#board::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(135deg,rgba(255,255,255,.018) 0 2px,transparent 2px 14px)}
 /* 번호·다음 순서 묶음은 화면 정중앙, 위(기관명·시계)와 아래(상태)는 가장자리에 띄움 */
-#board .b-top{position:absolute;top:2vh;left:0;right:0}
-#board .b-foot{position:absolute;bottom:1.5vh;left:0;right:0}
+.b-top,.b-foot{position:absolute;left:max(24px,3vw,env(safe-area-inset-left,0px));right:max(24px,3vw,env(safe-area-inset-right,0px));z-index:1;
+  display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.b-top{top:max(2.4vh,env(safe-area-inset-top,0px));font-family:var(--display);font-weight:700;font-size:clamp(18px,min(2.4vw,3.6vh),44px)}
+.b-top .org{color:var(--sg-soft);display:flex;align-items:center;gap:.5em}
+.b-top .org::before{content:"";width:.55em;height:.55em;border-radius:50%;background:var(--sg-gold);box-shadow:0 0 .6em var(--sg-gold)}
+.b-top .clock{font-variant-numeric:tabular-nums;color:var(--sg-ink);background:rgba(0,0,0,.18);border:1px solid rgba(255,255,255,.14);border-radius:999px;padding:.12em .7em}
+.b-foot{bottom:max(1.6vh,env(safe-area-inset-bottom,0px));color:var(--sg-soft);font-size:clamp(13px,1.3vw,20px)}
+.b-foot button{background:rgba(0,0,0,.2);color:var(--sg-soft);border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:6px 12px}
 html:fullscreen{cursor:none}
 html:fullscreen #fsBtn{display:none}
 html:fullscreen .b-foot .status:not(.bad){opacity:0}
-.b-top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
-  font-family:var(--display);font-weight:700;font-size:clamp(18px,2.6vw,40px)}
-.b-top .org{color:var(--muted)}
-.b-top .clock{font-variant-numeric:tabular-nums}
-.b-main{height:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:1.5vh}
-.b-label{font-family:var(--display);font-weight:900;font-size:clamp(26px,min(5vw,6vh),110px);color:var(--muted)}
-.b-num{font-family:var(--display);font-weight:900;line-height:1;color:var(--call);border-radius:24px;padding:0 .1em;
-  font-size:clamp(110px,min(30vw,40vh),560px);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
-.b-num small{font-size:.32em;font-weight:900;margin-left:.08em;letter-spacing:0}
-.b-sub{font-family:var(--display);font-weight:900;font-size:clamp(28px,5.4vw,92px);text-wrap:balance}
-.b-next{margin-top:1vh;display:inline-flex;gap:.2em .5em;align-items:baseline;flex-wrap:wrap;justify-content:center;
-  border:5px solid var(--line);border-radius:20px;padding:.3em .8em;
-  font-family:var(--display);font-weight:900;font-size:clamp(26px,min(4.8vw,6.5vh),110px);line-height:1.25}
-.b-next b{color:var(--warn);font-variant-numeric:tabular-nums}
-.b-msg{min-height:1.2em;font-family:var(--display);font-weight:700;font-size:clamp(22px,min(3.6vw,5vh),70px);text-wrap:balance}
-.b-foot{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;color:var(--muted);font-size:clamp(13px,1.3vw,20px)}
-.b-foot button{background:transparent;color:var(--muted);border:1px solid var(--line);border-radius:8px;padding:6px 12px}
-.flash{animation:flash 1.2s ease-out}
-@keyframes flash{0%{background:var(--accent);color:var(--accent-ink)}100%{background:transparent}}
+.b-main{position:relative;z-index:1;height:100%;padding-inline:16px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:1.2vh}
+.b-label{font-family:var(--display);font-weight:900;font-size:clamp(24px,min(4.4vw,5.6vh),100px);color:var(--sg-gold);
+  letter-spacing:.18em;padding:.12em .9em .12em 1.08em;border:2px solid rgba(255,210,122,.45);border-radius:999px;background:rgba(0,0,0,.14)}
+.b-num{font-family:var(--display);font-weight:900;line-height:1;color:var(--sg-ink);padding:0 .06em;
+  font-size:clamp(110px,min(31vw,41vh),580px);font-variant-numeric:tabular-nums;letter-spacing:-.03em;
+  text-shadow:0 .03em 0 rgba(0,0,0,.25),0 0 .25em rgba(0,0,0,.25)}
+.b-num small{font-size:.3em;font-weight:900;margin-left:.08em;letter-spacing:0;color:var(--sg-soft)}
+.b-sub{display:none}
+.b-next{margin-top:.6vh;display:inline-flex;gap:.2em .45em;align-items:center;flex-wrap:wrap;justify-content:center;max-width:100%;
+  background:var(--sg-card);color:var(--sg-card-ink);border-radius:.5em;padding:.28em .45em .28em .3em;
+  box-shadow:0 .25em .8em rgba(0,0,0,.28);
+  font-family:var(--display);font-weight:900;font-size:clamp(24px,min(4.6vw,6.2vh),108px);line-height:1.2}
+.b-next-tag{background:var(--sg-tag);color:var(--sg-ink);border-radius:.32em;padding:.08em .45em;font-size:.82em}
+.b-next b{color:var(--sg-range);font-variant-numeric:tabular-nums}
+.b-next-where{font-weight:700}
+.b-msg{min-height:1.2em;font-family:var(--display);font-weight:700;color:var(--sg-gold);font-size:clamp(22px,min(3.4vw,4.8vh),68px);text-wrap:balance}
+.flash{animation:flash 1.4s ease-out}
+@keyframes flash{0%{color:var(--sg-gold);transform:scale(1.06)}100%{color:var(--sg-ink);transform:scale(1)}}
 @media (prefers-reduced-motion:reduce){.flash{animation:none}}
+#board .status.bad{color:var(--sg-gold)}
 .status{font-size:14px;margin:0}
 .status.bad{color:var(--warn);font-weight:700}
 
@@ -105,7 +120,7 @@ input[type=number],input[type=text],input[type=password]{border:1px solid var(--
     <div class="b-label">호출 번호</div>
     <div class="b-num" id="bNum">—<small>번</small></div>
     <div class="b-sub" id="bSub" hidden>순번 정보를 불러오는 중입니다</div>
-    <div class="b-next" id="bNextWrap" hidden>다음 순서 <b id="bNext"></b></div>
+    <div class="b-next" id="bNextWrap" hidden><span class="b-next-tag">다음 순서</span><b id="bNext"></b><span class="b-next-where">3층에서 기다려 주세요</span></div>
     <div class="b-msg" id="bMsg"></div>
   </div>
   <div class="b-foot">
@@ -247,7 +262,7 @@ input[type=number],input[type=text],input[type=password]{border:1px solid var(--
     $("bSub").textContent = !loaded ? "순번 정보를 불러오는 중입니다"
       : cur <= 0 ? "곧 입장을 시작합니다. 번호표를 준비해 주세요"
       : cur + "번 번호표를 가지신 분은 식당 입구에서 대기해 주세요";
-    if (loaded && cur < total){ $("bNext").textContent = (cur+1) + "~" + Math.min(total, cur+NEXT_WAIT) + "번 · 3층에서 기다려 주세요"; $("bNextWrap").hidden = false; }
+    if (loaded && cur < total){ $("bNext").textContent = (cur+1) + "~" + Math.min(total, cur+NEXT_WAIT) + "번"; $("bNextWrap").hidden = false; }
     else $("bNextWrap").hidden = true;
     $("bMsg").textContent = s.message || "";
     if (loaded && lastShown !== null && lastShown !== cur){ numEl.classList.remove("flash"); void numEl.offsetWidth; numEl.classList.add("flash"); }
